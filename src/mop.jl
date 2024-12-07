@@ -131,9 +131,10 @@ subroutine functs_abstract(n, x, q, f) bind(C)
 end subroutine
 =#
 function functs_closure(mop)
-    @unpack objectives = mop
+    @unpack objectives, num_calls_objectives = mop
     return function (n::N, _x::Ptr{X}, q::Q, _f::Ptr{F}) where{N, X, Q, F}
         @debug "OBJECTIVES CLOSURE CALLED."
+        num_calls_objectives[] += 1
         x = unsafe_wrap(Array, _x, n)
         fx = unsafe_wrap(Array, _f, q)
         copyto!(fx, objectives(x))
@@ -152,11 +153,13 @@ subroutine fconstriq_abstract(n, m, x, ciq) bind(C)
 end subroutine
 =#
 function fconstriq_closure(mop)
-    @unpack constraints = mop
+    @unpack constraints, num_calls_constraints = mop
     if isnothing(constraints)
         return fconstriq_dummy()
     end
     return function (n::N, m::M, _x::Ptr{X}, _ciq::Ptr{C}) where{N,M,X,C}
+        @debug "CONSTRAINTS CLOSURE CALLED."
+        num_calls_constraints[] += 1
         x = unsafe_wrap(Array, _x, n)
         ciq = unsafe_wrap(Array, _ciq, m)
         copyto!(ciq, constraints(x))
