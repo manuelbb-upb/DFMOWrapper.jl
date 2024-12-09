@@ -78,13 +78,13 @@ and the number of constraint function evaluations, `res.num_calls_constraints`.
 ## Internals
 
 Originally, problems for DFMO have to be defined in a Fortran source file `problem.f90`.
-We now have put the problem related definitions into their own Fortran modules, with
+We have now put the problem related definitions into their own Fortran modules, with
 abstract C compatible interfaces for the important subroutines.
 For every subroutine, there is also a setter function.
 These are called from Julia.
 A setter function takes a function pointer (such as returned by Julia's `@cfunction`),
 makes it Fortran compatible (by means of `c_f_procpointer`) and stores the resulting
-procedure pointer with "backwards"-compatible type.
+procedure pointer with "backwards"-compatible name.
 
 The main routine in DFMO is not changed, execept that we have also made the algorithm
 settings routine parameters.
