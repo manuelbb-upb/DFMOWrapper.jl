@@ -1,5 +1,4 @@
 import DFMOWrapper as DFMO
-using WGLMakie
 
 mop = DFMO.MOP(;
     num_vars = 2,
@@ -18,7 +17,5 @@ mop = DFMO.MOP(;
 
 res = DFMO.optimize(
     mop; 
-    dfmo_path=joinpath(ENV["HOME"], "Coding", "DFMO", "build")
+    dfmo_path="Z:\\single_dll"
 )
-
-scatter(res.fx)

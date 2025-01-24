@@ -6,18 +6,24 @@ function check_dfmo_path(p)
 
     dfmo_files = readdir(p)
 
+    multiobj_file = SHARED_LIB_FILE
+
+    #=
     if !("makefile" in dfmo_files)
         @error "`makefile` missing in DFMO directory."
     end
+    =#
 
-    if !("multiobj.so" in dfmo_files)
-        @info "No file `multiobj.so` in DFMO directory. Trying to make it."
+    if !(multiobj_file in dfmo_files)
+        @info "No file `$(multiobj_file)` in DFMO directory. Trying to make it."
         startdir = pwd()
         success = true
         try
+            throw("")
             cd(p)
             run(`make clean`)
             run(`make shared`)
+            dfmo_files = readdir(p)
         catch
             @error "Could not `make` shared library. Is path writable? Is DFMO patched?"
             success = false
@@ -27,8 +33,8 @@ function check_dfmo_path(p)
         !success && return nothing
     end
 
-    if !("multiobj.so" in readdir(p))
-        @error "Somehow, `multiobj.so` is still missing :("
+    if !(multiobj_file in dfmo_files)
+        @error "Somehow, `$(multiobj_file)` is still missing :("
         return nothing
     end
     return p
@@ -41,7 +47,7 @@ end
 function check_res_dir(res_dir, fback=tempname())
     if !isdir(res_dir)
         try
-            @info "There is (temporary) result dir at `$(res_dir)`. Trying to make it..."
+            @info "There is no (temporary) result dir at `$(res_dir)`. Trying to make it..."
             mkpath(res_dir)
         catch
             @warn "Could not make result dir! Trying `$(fback)`."

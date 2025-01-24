@@ -7,6 +7,13 @@ import Libdl                    # working with shared library objects (compiled 
 import UnPack: @unpack
 import StructHelpers: @batteries
 
+const SHARED_LIB_EXT = @static if Sys.isunix()
+    ".so"
+else
+    ".dll"
+end
+const SHARED_LIB_FILE = "multiobj" * SHARED_LIB_EXT
+
 include("settings.jl")
 include("mop.jl")
 include("utils.jl")
@@ -64,7 +71,7 @@ function optimize(
     functs_cls_ptr = @cfunction $functs_cls Cvoid (Cint, Ptr{Cdouble}, Cint, Ptr{Cdouble},)
     fconstriq_cls_ptr = @cfunction $fconstriq_cls Cvoid (Cint, Cint, Ptr{Cdouble}, Ptr{Cdouble},)
 
-    dl_path = joinpath(dfmo_path, "multiobj.so")
+    dl_path = joinpath(dfmo_path, SHARED_LIB_FILE)
     dl = Libdl.dlopen(dl_path)
 
     # Obtain pointers to "setter" functions to register callbacks
