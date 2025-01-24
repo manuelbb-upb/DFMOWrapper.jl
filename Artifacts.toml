@@ -1,0 +1,6 @@
+[shared_libs]
+    git-tree-sha1 = "6bea4b812c896a1fac25b38ac645e4387345a5b3"
+
+    [[shared_libs.download]]
+    url = "https://github.com/manuelbb-upb/DFMO/releases/download/v0.0.12-DEV/shared_libs.tar.gz"
+    sha256 = "0d9969c9e5be034dde1208f0468d79d9f1f4a65b1f533a3fb56153787f4070a2"
