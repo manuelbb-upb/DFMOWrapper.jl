@@ -5,12 +5,14 @@ version = "0.1.0"
 
 [deps]
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 StructHelpers = "4093c41a-2008-41fd-82b8-e3f9d02b504f"
 UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 
 [compat]
 Libdl = "1.11.0"
+Logging = "1.11.0"
 Pkg = "1.11.0"
 StructHelpers = "1.2.0"
 UnPack = "1.0.2"

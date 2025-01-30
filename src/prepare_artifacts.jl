@@ -1,5 +1,5 @@
 # Standalone script to generate the artifact information for `../Artifact.toml`
-ver_str = "v0.0.12-DEV"
+ver_str = "v0.1.0"
 fname = "shared_libs.tar.gz"
 url = "https://github.com/manuelbb-upb/DFMO/releases/download/$(ver_str)/$(fname)"
 

@@ -1,43 +1,21 @@
-function check_dfmo_path(p)
-    if !isdir(p)
-        @error "Path of DFMO not pointing to any directory."
-        return nothing
+using Pkg.Artifacts
+function get_shared_lib(::Nothing)
+    global SHARED_LIB_FILE
+    slib_dir = artifact"shared_libs"
+    return joinpath(slib_dir, SHARED_LIB_FILE)
+end
+
+function get_shared_lib(fpath)
+    global SHARED_LIB_FILE, SHARED_LIB_EXT
+    if isdir(fpath)
+        fpath = joinpath(fpath, SHARED_LIB_FILE)
     end
-
-    dfmo_files = readdir(p)
-
-    multiobj_file = SHARED_LIB_FILE
-
-    #=
-    if !("makefile" in dfmo_files)
-        @error "`makefile` missing in DFMO directory."
+    if !isfile(fpath)
+        @warn "The requested file `$(fpath)` could not be found. Using artifacts."
+        return get_shared_lib(nothing)
     end
-    =#
-
-    if !(multiobj_file in dfmo_files)
-        @info "No file `$(multiobj_file)` in DFMO directory. Trying to make it."
-        startdir = pwd()
-        success = true
-        try
-            throw("")
-            cd(p)
-            run(`make clean`)
-            run(`make shared`)
-            dfmo_files = readdir(p)
-        catch
-            @error "Could not `make` shared library. Is path writable? Is DFMO patched?"
-            success = false
-        finally
-            cd(startdir)
-        end
-        !success && return nothing
-    end
-
-    if !(multiobj_file in dfmo_files)
-        @error "Somehow, `$(multiobj_file)` is still missing :("
-        return nothing
-    end
-    return p
+    @assert last(splitext(fpath)) == SHARED_LIB_EXT "Extension of shared library file must be `$(SHARED_LIB_EXT)`."
+    return fpath
 end
 
 function setter_ptr(dl, funcsym)
@@ -61,33 +39,27 @@ function check_res_dir(res_dir, fback=tempname())
     return res_dir
 end
 
-function read_dfmo_results(base_path::AbstractString; delete_files=true)
-    fobs_path = joinpath(base_path, "pareto_fobs.out")
-    vars_path = joinpath(base_path, "pareto_vars.out")
-    vars = Vector{Vector{Float64}}()
-    fobs = Vector{Vector{Float64}}()
-    viol = Vector{Float64}()
-    for line in Iterators.drop(eachline(vars_path), 1)
-        vals = [parse(Float64, s) for s in split(line, " ") if !isempty(s)]
-        push!(vars, vals[1:end-1])
-    end
-    for line in Iterators.drop(eachline(fobs_path), 1)
-        vals = [parse(Float64, s) for s in split(line, " ") if !isempty(s)]
-        push!(fobs, vals[1:end-1])
-        push!(viol, vals[end])
-    end
+function postprocess_results(x, mop)
+    fx = mapreduce(mop.objectives, hcat, eachcol(x))
+    cx = _pp_cx(mop.constraints, x)
+    @unpack lb, ub = mop
+    rx = _pp_rx(x, lb, ub)
+    viol = _pp_viol(rx, cx)
     
-    X = reduce(hcat, vars)
-    F = reduce(hcat, fobs)
-   
-    fort_path = joinpath(base_path, "meta.out")
-    reg =  r"number of function evaluations[^\d]*?(\d+)"
-    num_evals = parse(Int, only(match(reg, read(fort_path, String)).captures))
+    return fx, cx, rx, viol, mop.num_calls_objectives[], mop.num_calls_constraints[]
+end
 
-	if delete_files
-		rm(fobs_path, force=true)
-		rm(vars_path, force=true)
-		rm(fort_path, force=true)
-	end
-    return X, F, viol, num_evals
+function _pp_cx(::Nothing, x)
+    return Matrix{Float64}(undef, 0, size(x, 2))
+end
+function _pp_cx(cfunc, x)
+    return mapreduce(cfunc, hcat, eachcol(x))
+end
+
+function _pp_rx(x, lb, ub)
+    return mapreduce(ξ -> max.(lb .- ξ, ξ .- ub), hcat, eachcol(x))
+end
+
+function _pp_viol(rx, cx)
+    return vec(max.(0, maximum(cx; dims=1, init=0.0), maximum(rx; dims=1, init=0.0)))
 end

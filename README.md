@@ -1,21 +1,14 @@
 # DFMOWrapper.jl
-## Call DFMO Derivative-Free Multi-Objective Optmizer from Julia
+## Call DFMO Derivative-Free Multi-Objective Optimizer from Julia
 
 This package is motivated by a simple question:
-Can we use Julia to pass a Matlab objective to the [DFMO](https://github.com/DerivativeFreeLibrary/DFMO) optimizer 
-written in Fortran?
+Can we use Julia to pass a Matlab objective to the 
+[DFMO](https://github.com/DerivativeFreeLibrary/DFMO) optimizer 
+that is written in Fortran?
 The answer is yes: By making certain subroutines C-compatible, and compiling a shared library, we 
 can actually pass Julia callbacks (even closures!) to the optimizer.
 
 ## Installation
-For now, you have to provide the DFMO source manually.
-**Use this fork:**
-```
-https://github.com/manuelbb-upb/DFMO
-```
-Clone the repo or download and unpack the source, and note the location.
-You don't need to compile anything yourself, but `gfortran` has to be available.
-Moreover, the source location has to be writable!
 
 This wrapper package is not registered, but you can add it as follows:
 ```julia
@@ -23,6 +16,13 @@ using Pkg
 # `add` or `develop` from url:
 Pkg.add(; url="https://github.com/manuelbb-upb/DFMOWrapper.jl")
 ```
+
+We now leverage the Julia artifact system to provide to obtain compiled shared library objects
+from our [fork](https://github.com/manuelbb-upb/DFMO).
+We support 64-bit Linux and Windows systems on `x86` architectures.
+If you want to try to compile for a different environment, give it a try and call 
+`optimize` with the `shared_lib_path` keyword argument. In case of success, please consider 
+creating an informal pull request.
 
 ## Usage
 
@@ -45,8 +45,7 @@ mop = DFMO.MOP(;
     end
 )
 ```
-The problem needs box constraints.
-Box constraints have to be finite.
+Every problem needs finite box constraints!
 Nonlinear constraints can be defined with the keyword-argument `constraints`.
 Both `objectives` and `constraints` take a single real vector and return a single
 value vector.
@@ -67,13 +66,19 @@ res = DFMO.optimize(
 The result `res` is a `DFMO.AbstractResult`.
 If something went wrong, then `res <: NoResult`.
 Otherwise, `res <: Parsedresult`.
-In this case, `res.x` is a matrix with result variable vectors as columns, and
-`res.fx` are the objective values.
-The field `res.fx_parsed` has the values as returned by DFMO (penalized?).
-The vector `res.viol` has constraint violation values as returned by DFMO.
-The number of function evaluations `res.num_evals` is returned by DFMO as well.
-We count ourselves the number of objective function evaluations, `res.num_calls_objectives`,
-and the number of constraint function evaluations, `res.num_calls_constraints`.
+In this case:
+* `res.x` is a matrix with result variable vectors as columns,
+* and `res.fx` are the objective values.
+* The field `res.cx` has the constraint function values at `x`.
+* The field `res.rx` has the constraint violation values for the box constraints.  
+  Column `j` has the values `max.(lb - res.x[:, j], res.x[:, j] .- ub)`.
+* The field `res.viol` has the l1-penalty values based on `res.cx` and `res.bx`.  
+  If an entry is positive, the respective column in `res.x` violates constraints.
+* The field `res.fx_parsed` has the values as returned by DFMO (penalized?).
+* The vector `res.viol_parsed` has constraint violation values as returned by DFMO.
+* The number of function evaluations `res.num_evals` is returned by DFMO as well.  
+  We count the number of objective function evaluations, `res.num_calls_objectives`,
+  and the number of constraint function evaluations, `res.num_calls_constraints`.
 
 ## Internals
 
@@ -86,7 +91,7 @@ A setter function takes a function pointer (such as returned by Julia's `@cfunct
 makes it Fortran compatible (by means of `c_f_procpointer`) and stores the resulting
 procedure pointer with "backwards"-compatible name.
 
-The main routine in DFMO is not changed, execept that we have also made the algorithm
+The main routine in DFMO is not changed, except that we have also made the algorithm
 settings routine parameters.
 
 To be honest, I don't really understand half of what I have done.
@@ -96,8 +101,7 @@ Garbage collection scares me, but the simple example runs without segmentation f
 
 ## TODO
 
-* Include constraint values in results.
+* Improve logging, redirecting stdout.
 * Interface for results.
 * Test problems with nonlinear constraints.
 * Test behavior for different return types.
-* Use Artifact system for Fortran source.

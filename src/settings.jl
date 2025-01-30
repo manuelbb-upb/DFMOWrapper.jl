@@ -12,7 +12,7 @@ Return a mutable settings object for compilation of a problem for DFMO.
 
 * `alfa_stop :: Float64 = 1e-9`: minimum step length.
 * `nf_max :: Integer = 2000`: maximum number of function evaluations.
-* `iprint :: Integer = 0`: printing level. A value of `0` disables console output.
+* `iprint :: Integer = 0`: printing level. A value of `0` disables most console output.
 * `hschoice :: DIRTYPE = DFMO_SOBOL_DIRS`: which directions to use.
 * `dir_dense :: Bool = true`: whether to use dense direction or not.
 * `dir_coord :: Bool = true`: whether to use coordinate directions or not.
